@@ -7,7 +7,9 @@
 //
 
 import UIKit
+import Skillz
 
+@available(iOS 10.0, *)
 class ViewController: UIViewController {
   
   // MARK: - enum
@@ -46,43 +48,44 @@ class ViewController: UIViewController {
   
   // MARK: - IBOutlets
   @IBOutlet weak var clockLabel: UILabel!
-  @IBOutlet weak var startLabel: UILabel!
-  @IBOutlet weak var bestTimeLabel: UILabel!
+  @IBOutlet weak var save: UILabel!
+  @IBOutlet weak var play: UIButton!
+  @IBAction func play(_ sender: Any) {
+    Skillz.skillzInstance().launch()
+  }
+  
     
   // MARK: - Lifecycle
   override func viewDidLoad() {
     super.viewDidLoad()
-    setupPlayerView()
-    prepareGame()
   }
   
   override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     // First touch to start the game
-    if gameState == .ready {
-      startGame()
-    }
-    
-    if let touchLocation = event?.allTouches?.first?.location(in: view) {
-      // Move the player to the new position
-      movePlayer(to: touchLocation)
-      
-      // Move all enemies to the new position to trace the player
-      moveEnemies(to: touchLocation)
+    if gameState == .playing {
+      if let touchLocation = event?.allTouches?.first?.location(in: view) {
+        // Move the player to the new position
+        movePlayer(to: touchLocation)
+        
+        // Move all enemies to the new position to trace the player
+        moveEnemies(to: touchLocation)
+      }
     }
   }
   
   // MARK: - Selectors
-  func generateEnemy(timer: Timer) {
+    @objc func generateEnemy(timer: Timer) {
     // Generate an enemy with random position
-    let screenEdge = ScreenEdge.init(rawValue: Int(arc4random_uniform(4)))
+      
+    let screenEdge = ScreenEdge.init(rawValue: Int(Skillz.getRandomNumber(withMin: 0, andMax: 4)))
     let screenBounds = UIScreen.main.bounds
     var position: CGFloat = 0
     
     switch screenEdge! {
     case .left, .right:
-      position = CGFloat(arc4random_uniform(UInt32(screenBounds.height)))
+      position = CGFloat(Skillz.getRandomNumber(withMin: 0, andMax: UInt(UInt32(screenBounds.height))))
     case .top, .bottom:
-      position = CGFloat(arc4random_uniform(UInt32(screenBounds.width)))
+      position = CGFloat(Skillz.getRandomNumber(withMin: 0, andMax: UInt(UInt32(screenBounds.width))))
     }
     
     // Add the new enemy to the view
@@ -118,13 +121,12 @@ class ViewController: UIViewController {
     enemyViews.append(enemyView)
   }
   
-  func tick(sender: CADisplayLink) {
+    @objc func tick(sender: CADisplayLink) {
     updateCountUpTimer(timestamp: sender.timestamp)
     checkCollision()
   }
-}
 
-fileprivate extension ViewController {
+@available(iOS 10.0, *)
   func setupPlayerView() {
     playerView.bounds.size = CGSize(width: radius * 2, height: radius * 2)
     playerView.layer.cornerRadius = radius
@@ -147,17 +149,17 @@ fileprivate extension ViewController {
   
   func startDisplayLink() {
     displayLink = CADisplayLink(target: self, selector: #selector(tick(sender:)))
-    displayLink?.add(to: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
+    displayLink?.add(to: RunLoop.main, forMode: RunLoop.Mode.default)
   }
   
   func stopDisplayLink() {
     displayLink?.isPaused = true
-    displayLink?.remove(from: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
+    displayLink?.remove(from: RunLoop.main, forMode: RunLoop.Mode.default)
     displayLink = nil
   }
   
   func getRandomColor() -> UIColor {
-    let index = arc4random_uniform(UInt32(colors.count))
+    let index = Skillz.getRandomNumber(withMin: 0, andMax: UInt(UInt32(colors.count)));
     return colors[Int(index)]
   }
   
@@ -168,8 +170,10 @@ fileprivate extension ViewController {
   }
   
   func gameOver() {
+    Skillz.skillzInstance().displayTournamentResults(withScore: NSNumber(value: elapsedTime.rounded(.towardZero))) {
+      // Completion block
+    }
     stopGame()
-    displayGameOverAlert()
   }
   
   func stopGame() {
@@ -177,14 +181,15 @@ fileprivate extension ViewController {
     stopDisplayLink()
     stopAnimators()
     gameState = .gameOver
+    
   }
   
   func prepareGame() {
-    getBestTime()
     removeEnemies()
     centerPlayerView()
     popPlayerView()
-    startLabel.isHidden = false
+    play.isHidden = false;
+    save.isHidden = false;
     clockLabel.text = "00:00.000"
     gameState = .ready
   }
@@ -192,8 +197,9 @@ fileprivate extension ViewController {
   func startGame() {
     startEnemyTimer()
     startDisplayLink()
-    startLabel.isHidden = true
     beginTimestamp = 0
+    play.isHidden = true;
+    save.isHidden = true;
     gameState = .playing
   }
   
@@ -204,6 +210,7 @@ fileprivate extension ViewController {
     enemyViews = []
   }
   
+  @available(iOS 10.0, *)
   func stopAnimators() {
     playerAnimator?.stopAnimation(true)
     playerAnimator = nil
@@ -224,9 +231,7 @@ fileprivate extension ViewController {
   func format(timeInterval: TimeInterval) -> String {
     let interval = Int(timeInterval)
     let seconds = interval % 60
-    let minutes = (interval / 60) % 60
-    let milliseconds = Int(timeInterval * 1000) % 1000
-    return String(format: "%02d:%02d.%03d", minutes, seconds, milliseconds)
+    return String(format: "%02d", seconds)
   }
   
   func checkCollision() {
@@ -260,32 +265,7 @@ fileprivate extension ViewController {
       enemyAnimators[index].startAnimation()
     }
   }
-  
-  func displayGameOverAlert() {
-    let (title, message) = getGameOverTitleAndMessage()
-    let alert = UIAlertController(title: "Game Over", message: message, preferredStyle: .alert)
-    let action = UIAlertAction(title: title, style: .default,
-                               handler: { _ in
-                                self.prepareGame()
-      }
-    )
-    alert.addAction(action)
-    self.present(alert, animated: true, completion: nil)
-  }
-  
-  func getGameOverTitleAndMessage() -> (String, String) {
-    let elapsedSeconds = Int(elapsedTime) % 60
-    setBestTime(with: format(timeInterval: elapsedTime))
-    
-    switch elapsedSeconds {
-    case 0..<10: return ("I try again 😂", "Seriously, you need more practice 😒")
-    case 10..<30: return ("Another go 😉", "No bad, you are getting there 😁")
-    case 30..<60: return ("Play again 😉", "Very good 👍")
-    default:
-      return ("Off cause 😚", "Legend, olympic player, go 🇧🇷")
-    }
-  }
-  
+
   func centerPlayerView() {
     // Place the player in the center of the screen.
     playerView.center = view.center
@@ -296,26 +276,12 @@ fileprivate extension ViewController {
     let animation = CAKeyframeAnimation(keyPath: "transform.scale")
     animation.values = [0, 0.2, -0.2, 0.2, 0]
     animation.keyTimes = [0, 0.2, 0.4, 0.6, 0.8, 1]
-    animation.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
+    animation.timingFunction = CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeInEaseOut)
     animation.duration = CFTimeInterval(0.7)
     animation.isAdditive = true
     animation.repeatCount = 1
     animation.beginTime = CACurrentMediaTime()
     playerView.layer.add(animation, forKey: "pop")
   }
-    
-    func setBestTime(with time:String){
-        let defaults = UserDefaults.standard
-            defaults.set(time, forKey: "bestTime")
-        
-    }
-    
-    func getBestTime(){
-        let defaults = UserDefaults.standard
-        
-        if let time = defaults.value(forKey: "bestTime") as? String {
-            self.bestTimeLabel.text = "Best Time: \(time)"
-        }
-    }
   
 }
