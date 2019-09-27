@@ -1,6 +1,6 @@
 # Save the Dot
 
-I simply integrated the open source game, Save The Dot with the Skillz platform. This was an assignment I had while interning at Skillz. The game mechanics were done by JakeLin. 
+I simply integrated the open source game, Save The Dot with the Skillz platform. This was an assignment I had while interning at Skillz. The game mechanics were done by JakeLin. The game can now be played competitively for cash prizes. 
 
 ![SaveTheDot](https://cloud.githubusercontent.com/assets/573856/16248754/90150c2a-3854-11e6-9ee1-c2e4f228a9b6.gif)
 
@@ -23,12 +23,6 @@ $ git clone https://github.com/JakeLin/SaveTheDot.git
 $ cd SaveTheDot
 $ open "SaveTheDot.xcodeproj"
 ```
-
-# Requirements
-
-* Xcode 8.0 (8A218a)
-* iOS 10
-* Swift 3
 
 ## License
 **Save the Dot** is released under the MIT license. See [LICENSE](https://github.com/JakeLin/SaveTheDot/blob/master/LICENSE) for details.
