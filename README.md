@@ -14,7 +14,7 @@ I simply integrated the open source game, Save The Dot with the Skillz platform.
 * Clone the repository
 
 ```bash
-$ git clone https://github.com/JakeLin/SaveTheDot.git
+$ git clone https://github.com/isa3bel/SaveTheDot.git
 ```
 
 * Open the project in Xcode 8
