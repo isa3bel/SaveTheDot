@@ -3,6 +3,7 @@
 //  SaveTheDot
 //
 //  Created by Jake Lin on 6/18/16.
+// Integrated with Skillz on 10/3/19
 //  Copyright © 2016 Jake Lin. All rights reserved.
 //
 
